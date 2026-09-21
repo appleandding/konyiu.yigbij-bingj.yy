@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>信号接通中……</title>
+    <style>
+        :root {
+            --bg: #050405;
+            --panel: #0c0e12;
+            --text-main: #cfcfd4;
+            --blood: #7a000c;
+            --blood-bright: #eb1424;
+            --blood-dark: #330105;
+            --glow: rgba(235, 20, 36, 0.45);
+            /* 动态环境恶化变量 */
+            --screen-brightness: 1;
+            --noise-opacity: 0.05;
+            --vignette-radius: 60%;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", monospace;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+            filter: brightness(var(--screen-brightness));
+            transition: filter 0.8s ease;
+        }
+
+        /* 1. CRT 电视机雪花噪点 Canvas */
+        #noise-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 60;
+            opacity: var(--noise-opacity);
+            mix-blend-mode: screen;
+            transition: opacity 0.5s ease;
+        }
+
+        /* 2. CRT 扫描线与微弱滚屏频闪 */
+        .crt-scanlines {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.4) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 0, 0, 0), rgba(0, 255, 200, 0.02));
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+            z-index: 55;
+            animation: crtFlicker 0.15s infinite;
+        }
+
+        @keyframes crtFlicker {
+            0% { opacity: 0.92; }
+            50% { opacity: 0.98; }
+            100% { opacity: 0.94; }
+        }
+
+        /* 3. 动态暗角 */
+        #tunnel-vignette {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle, transparent var(--vignette-radius), rgba(0, 0, 0, 0.98) 100%);
+            pointer-events: none;
+            z-index: 45;
+            transition: background 0.8s ease;
+        }
+
+        /* 4. 血眼 Canvas */
+        #eyes-canvas {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 50;
+            background: rgba(0, 0, 0, 0.82);
+        }
+
+        /* 5. 永久性粘滞血痕 Canvas */
+        #blood-canvas {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 52;
+        }
+
+        /* 6. 幽魂浮动字迹层 */
+        #floating-text-container {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 58;
+            overflow: hidden;
+        }
+
+        .floating-phrase {
+            position: absolute;
+            color: var(--blood-bright);
+            font-size: 1.4rem;
+            font-weight: 900;
+            white-space: nowrap;
+            opacity: 0;
+            text-shadow: 0 0 12px var(--blood-bright), 0 0 25px #000;
+            animation: floatDrift 3.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+
+        @keyframes floatDrift {
+            0% { opacity: 0; transform: translateY(30px) scale(0.9); }
+            20% { opacity: 0.95; }
+            80% { opacity: 0.85; transform: translateY(-40px) scale(1.05); }
+            100% { opacity: 0; transform: translateY(-70px) scale(1.1); }
+        }
+
+        /* 7. 逐字拍击血字印屏覆盖层 */
+        #slam-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            pointer-events: none;
+            z-index: 59;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .slam-char {
+            font-size: 4.8rem;
+            font-weight: 900;
+            color: var(--blood-bright);
+            text-shadow: 0 0 25px var(--blood-bright), 0 0 45px #000, 2px 2px 0px #fff;
+            letter-spacing: 8px;
+            display: inline-block;
+            animation: charSlam 0.22s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+        }
+
+        @keyframes charSlam {
+            0% { transform: scale(3.5); opacity: 0; filter: blur(10px); }
+            70% { transform: scale(0.9); opacity: 1; filter: blur(0); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* 超剧烈核爆级全屏狂震 */
+        .hyper-shake {
+            animation: hyperViolentShake 0.08s infinite alternate !important;
+        }
+
+        @keyframes hyperViolentShake {
+            0% { transform: translate(-14px, 12px) rotate(-1.5deg) scale(1.03); }
+            25% { transform: translate(16px, -14px) rotate(1.8deg) scale(0.98); }
+            50% { transform: translate(-18px, -10px) rotate(-1.2deg) scale(1.04); }
+            75% { transform: translate(14px, 16px) rotate(1.5deg) scale(0.99); }
+            100% { transform: translate(-10px, 8px) rotate(-1deg) scale(1.02); }
+        }
+
+        /* 主面板 */
+        .container {
+            width: 92%;
+            max-width: 640px;
+            background: var(--panel);
+            border: 1px solid #1f2229;
+            border-top: 2px solid var(--blood-bright);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9), 0 0 25px rgba(122, 0, 12, 0.25);
+            border-radius: 6px;
+            padding: 34px;
+            position: relative;
+            z-index: 20;
+            transition: transform 0.3s ease, border-color 0.5s ease;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 3px;
+            background: #181a20;
+            margin-bottom: 22px;
+            overflow: hidden;
+        }
+
+        .progress-inner {
+            height: 100%;
+            width: 5%;
+            background: var(--blood-bright);
+            box-shadow: 0 0 10px var(--blood-bright);
+            transition: width 0.35s ease;
+        }
+
+        .q-header {
+            font-size: 0.82rem;
+            color: var(--blood-bright);
+            letter-spacing: 2px;
+            margin-bottom: 14px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .question-text {
+            font-size: 1.22rem;
+            line-height: 1.7;
+            color: #f5f5f7;
+            min-height: 65px;
+            margin-bottom: 26px;
+            letter-spacing: 0.5px;
+        }
+
+        .options-box {
+            display: flex;
+            flex-direction: column;
+            gap: 11px;
+        }
+
+        .option-btn {
+            background: #08090c;
+            border: 1px solid #1c1f26;
+            color: #b5b5bf;
+            padding: 14px 18px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+
+        .option-btn:hover {
+            border-color: var(--blood-bright);
+            color: #ffffff;
+            background: #140407;
+            padding-left: 22px;
+        }
+
+        .option-btn.disabled-btn {
+            pointer-events: none;
+            opacity: 0.15;
+            filter: grayscale(1);
+            border-color: #222 !important;
+        }
+
+        .option-btn.forced-btn {
+            border-color: var(--blood-bright) !important;
+            color: #fff !important;
+            background: var(--blood-dark) !important;
+            box-shadow: 0 0 18px var(--glow);
+        }
+
+        /* 模态弹窗 */
+        .modal-mask {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(3, 3, 4, 0.94);
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-box {
+            background: #090a0d;
+            border: 1px solid var(--blood-bright);
+            box-shadow: 0 0 35px rgba(235, 20, 36, 0.3);
+            padding: 30px;
+            width: 88%;
+            max-width: 480px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            color: var(--blood-bright);
+            margin-bottom: 14px;
+            letter-spacing: 1.5px;
+        }
+
+        .modal-desc {
+            font-size: 0.96rem;
+            color: #d1d1d6;
+            line-height: 1.7;
+            margin-bottom: 24px;
+            text-align: left;
+        }
+
+        .soothe-input-box {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .soothe-input {
+            width: 100%;
+            background: #140305;
+            border: 1px solid var(--blood-bright);
+            padding: 12px;
+            color: #fff;
+            font-size: 0.95rem;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .soothe-input:focus {
+            box-shadow: 0 0 12px var(--glow);
+        }
+
+        .modal-btns {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+
+        .modal-btn {
+            padding: 10px 22px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.92rem;
+            transition: 0.2s;
+        }
+
+        .btn-blood {
+            background: var(--blood);
+            color: #fff;
+            border: 1px solid var(--blood-bright);
+        }
+
+        .btn-blood:hover {
+            background: var(--blood-bright);
+            box-shadow: 0 0 15px var(--glow);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: #888;
+            border: 1px solid #333;
+        }
+
+        .btn-ghost:hover {
+            background: #1a1a1e;
+            color: #bbb;
+        }
+
+        /* 纯黑停滞层 */
+        #blackout-layer {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: #000000;
+            z-index: 150;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            color: #ececee;
+            text-align: center;
+            padding: 20px;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+            line-height: 2;
+        }
+
+        /* 满屏文字暴走层 */
+        #flood-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(6, 2, 3, 0.88);
+            z-index: 65;
+            overflow: hidden;
+            pointer-events: none;
+        }
+
+        .flood-item {
+            position: absolute;
+            color: var(--blood-bright);
+            font-size: 1.15rem;
+            opacity: 0.75;
+            white-space: nowrap;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body id="body-node">
+
+    <!-- 1. CRT 电视机雪花噪点 -->
+    <canvas id="noise-canvas"></canvas>
+    <div class="crt-scanlines"></div>
+
+    <!-- 2. 暗角、血眼、血痕、漂浮字迹与拍字覆盖层 -->
+    <div id="tunnel-vignette"></div>
+    <canvas id="eyes-canvas"></canvas>
+    <canvas id="blood-canvas"></canvas>
+    <div id="floating-text-container"></div>
+    <div id="slam-overlay">
+        <div id="slam-text-box" style="display: flex; justify-content: center; align-items: center; gap: 8px;"></div>
+    </div>
+    <div id="flood-overlay"></div>
+
+    <!-- 3. 纯黑停滞层 -->
+    <div id="blackout-layer">
+        <div id="blackout-msg">不要动</div>
+    </div>
+
+    <!-- 4. 开局预警 -->
+    <div id="warning-modal" class="modal-mask" style="display: flex;">
+        <div class="modal-box">
+            <div class="modal-title">信号接入预警</div>
+            <div class="modal-desc">
+                本页面包含 **高烈度剧烈全屏震颤、血眼凝视、血字拍击屏幕、逐步恶化的永久血痕** 与第一人称病娇心理支配。<br><br>
+                你的每一次违抗都会导致画面永久恶化。如果感到眼部或心理不适，请随时退出。
+            </div>
+            <div class="modal-btns">
+                <button class="modal-btn btn-ghost" onclick="exitGame()">掐断信号</button>
+                <button class="modal-btn btn-blood" onclick="startGame()">调频接入，开始测试</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. 通用交互模态框 -->
+    <div id="action-modal" class="modal-mask">
+        <div class="modal-box">
+            <div class="modal-title" id="m-title">来自我的话</div>
+            <div class="modal-desc" id="m-desc">加载中</div>
+
+            <div id="soothe-area" class="soothe-input-box">
+                <input type="text" id="soothe-field" class="soothe-input" placeholder="输入你想对我说的真心话" maxlength="30" autocomplete="off">
+                <div style="font-size: 0.8rem; color: #777;" id="soothe-tip">提示：如果我看不到你眼里的诚意，对话将无法继续。</div>
+            </div>
+
+            <div class="modal-btns">
+                <button class="modal-btn btn-blood" id="m-btn" onclick="handleModalConfirm()">继续</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. 主答题面板 -->
+    <div class="container" id="main-panel">
+        <div class="progress-bar">
+            <div class="progress-inner" id="progress"></div>
+        </div>
+        <div class="q-header">
+            <span id="q-number">QUESTION 01 / 20</span>
+            <span id="q-status">监视信号已锁定</span>
+        </div>
+        <div class="question-text" id="q-text">正在捕捉你的视线</div>
+        <div class="options-box" id="options-box"></div>
+    </div>
+
+    <script>
+        /* ================= 1. Web Audio 原生音效引擎 ================= */
+        let audioCtx = null;
+        let ambientGain = null;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                startAmbientHum();
+            }
+        }
+
+        // CRT 背景电流微嗡
+        function startAmbientHum() {
+            try {
+                const humOsc = audioCtx.createOscillator();
+                ambientGain = audioCtx.createGain();
+                humOsc.type = 'sine';
+                humOsc.frequency.setValueAtTime(55, audioCtx.currentTime);
+                ambientGain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+                humOsc.connect(ambientGain);
+                ambientGain.connect(audioCtx.destination);
+                humOsc.start();
+            } catch(e) {}
+        }
+
+        // 低频心跳重击
+        function soundHeartbeat() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(50, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.22);
+            gain.gain.setValueAtTime(0.75, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.22);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.22);
+        }
+
+        // 超重击震荡（用于狂暴震颤）
+        function soundHeavyThud() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.5);
+            gain.gain.setValueAtTime(0.8, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+
+        // 血字拍击重响（单字拍屏音效）
+        function soundWordSlam() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(140, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.18);
+            gain.gain.setValueAtTime(0.7, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.18);
+        }
+
+        // 刀刃金属刮擦
+        function soundBladeScrape() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(1400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(220, audioCtx.currentTime + 0.5);
+            gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+
+        // 诡异八音盒
+        function soundMusicBox() {
+            if (!audioCtx) return;
+            const notes = [587.33, 622.25, 493.88];
+            notes.forEach((freq, idx) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime + idx * 0.18);
+                gain.gain.setValueAtTime(0.25, audioCtx.currentTime + idx * 0.18);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + idx * 0.18 + 0.6);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(audioCtx.currentTime + idx * 0.18);
+                osc.stop(audioCtx.currentTime + idx * 0.18 + 0.6);
+            });
+        }
+
+        // 双声道低语
+        function soundWhisperPan() {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            let panner;
+            try {
+                panner = audioCtx.createStereoPanner();
+                panner.pan.setValueAtTime(-0.85, audioCtx.currentTime);
+                panner.pan.linearRampToValueAtTime(0.85, audioCtx.currentTime + 0.6);
+            } catch(e) { panner = null; }
+
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(60, audioCtx.currentTime + 0.6);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.6);
+
+            if (panner) {
+                osc.connect(panner);
+                panner.connect(gain);
+            } else {
+                osc.connect(gain);
+            }
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.6);
+        }
+
+        // 沉闷敲门声
+        function soundDoorKnock() {
+            if (!audioCtx) return;
+            for (let i = 0; i < 3; i++) {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(75, audioCtx.currentTime + i * 0.14);
+                osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + i * 0.14 + 0.08);
+                gain.gain.setValueAtTime(0.4, audioCtx.currentTime + i * 0.14);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.14 + 0.08);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start(audioCtx.currentTime + i * 0.14);
+                osc.stop(audioCtx.currentTime + i * 0.14 + 0.08);
+            }
+        }
+
+        /* ================= 2. CRT 电视雪花噪点引擎 ================= */
+        const noiseCanvas = document.getElementById('noise-canvas');
+        const noiseCtx = noiseCanvas.getContext('2d');
+        const noiseWidth = 160;
+        const noiseHeight = 120;
+        noiseCanvas.width = noiseWidth;
+        noiseCanvas.height = noiseHeight;
+
+        function renderNoise() {
+            const imgData = noiseCtx.createImageData(noiseWidth, noiseHeight);
+            const data = imgData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                const val = Math.random() * 255;
+                data[i] = val;
+                data[i + 1] = val;
+                data[i + 2] = val;
+                data[i + 3] = 255;
+            }
+            noiseCtx.putImageData(imgData, 0, 0);
+            requestAnimationFrame(renderNoise);
+        }
+
+        /* ================= 3. 永久粘滞血痕系统 ================= */
+        const bloodCanvas = document.getElementById('blood-canvas');
+        const bloodCtx = bloodCanvas.getContext('2d');
+        let persistentStains = [];
+
+        function initBloodCanvas() {
+            bloodCanvas.width = window.innerWidth;
+            bloodCanvas.height = window.innerHeight;
+            window.addEventListener('resize', () => {
+                bloodCanvas.width = window.innerWidth;
+                bloodCanvas.height = window.innerHeight;
+                redrawPermanentBlood();
+            });
+        }
+
+        function redrawPermanentBlood() {
+            bloodCtx.clearRect(0, 0, bloodCanvas.width, bloodCanvas.height);
+            bloodCtx.lineCap = 'round';
+            persistentStains.forEach(stain => {
+                bloodCtx.strokeStyle = stain.color;
+                bloodCtx.lineWidth = stain.width;
+                bloodCtx.beginPath();
+                bloodCtx.moveTo(stain.x, stain.y);
+                bloodCtx.lineTo(stain.x, stain.y + stain.currentY);
+                bloodCtx.stroke();
+
+                bloodCtx.fillStyle = stain.color;
+                bloodCtx.beginPath();
+                bloodCtx.arc(stain.x, stain.y + stain.currentY, stain.width + 1.2, 0, Math.PI * 2);
+                bloodCtx.fill();
+            });
+        }
+
+        function addPermanentBloodDrips(isHeavy = false, specificX = null, startY = 0) {
+            const count = isHeavy ? 14 : 5;
+            const newDrips = [];
+
+            for (let i = 0; i < count; i++) {
+                const posX = specificX !== null ? (specificX + (Math.random() - 0.5) * 60) : (Math.random() * bloodCanvas.width);
+                const drip = {
+                    x: posX,
+                    y: startY,
+                    length: isHeavy ? (140 + Math.random() * 260) : (50 + Math.random() * 140),
+                    speed: isHeavy ? (4.5 + Math.random() * 5.5) : (2 + Math.random() * 3.5),
+                    currentY: 0,
+                    width: isHeavy ? (3 + Math.random() * 2) : (2 + Math.random() * 1.5),
+                    color: '#eb1424'
+                };
+                newDrips.push(drip);
+                persistentStains.push(drip);
+            }
+
+            function animateNewDrips() {
+                let allDone = true;
+                newDrips.forEach(d => {
+                    if (d.currentY < d.length) {
+                        d.currentY += d.speed;
+                        allDone = false;
+                    } else {
+                        d.color = '#540207';
+                    }
+                });
+
+                redrawPermanentBlood();
+
+                if (!allDone) {
+                    requestAnimationFrame(animateNewDrips);
+                }
+            }
+            animateNewDrips();
+        }
+
+        /* ================= 4. 血眼渲染引擎 ================= */
+        const eyesCanvas = document.getElementById('eyes-canvas');
+        const eyesCtx = eyesCanvas.getContext('2d');
+        let eyesList = [];
+        let eyesAnimationId = null;
+
+        function initEyesCanvas() {
+            eyesCanvas.width = window.innerWidth;
+            eyesCanvas.height = window.innerHeight;
+            window.addEventListener('resize', () => {
+                eyesCanvas.width = window.innerWidth;
+                eyesCanvas.height = window.innerHeight;
+            });
+        }
+
+        function renderBloodshotEyes(callback) {
+            eyesCanvas.style.display = 'block';
+            eyesList = [];
+            for (let i = 0; i < 35; i++) {
+                eyesList.push({
+                    x: Math.random() * eyesCanvas.width,
+                    y: Math.random() * eyesCanvas.height,
+                    size: 22 + Math.random() * 48,
+                    openProgress: 0,
+                    openSpeed: 0.05 + Math.random() * 0.08,
+                    pupilOffset: (Math.random() - 0.5) * 6
+                });
+            }
+
+            let start = Date.now();
+            function drawEyes() {
+                eyesCtx.clearRect(0, 0, eyesCanvas.width, eyesCanvas.height);
+                eyesList.forEach(eye => {
+                    if (eye.openProgress < 1) eye.openProgress += eye.openSpeed;
+                    eyesCtx.save();
+                    eyesCtx.translate(eye.x, eye.y);
+
+                    // 眼眶
+                    eyesCtx.beginPath();
+                    eyesCtx.strokeStyle = '#eb1424';
+                    eyesCtx.lineWidth = 2.5;
+                    eyesCtx.fillStyle = '#140003';
+                    const h = (eye.size * 0.45) * eye.openProgress;
+                    eyesCtx.moveTo(-eye.size, 0);
+                    eyesCtx.quadraticCurveTo(0, -h * 2, eye.size, 0);
+                    eyesCtx.quadraticCurveTo(0, h * 2, -eye.size, 0);
+                    eyesCtx.fill();
+                    eyesCtx.stroke();
+
+                    // 血丝瞳孔
+                    if (eye.openProgress > 0.25) {
+                        eyesCtx.beginPath();
+                        eyesCtx.fillStyle = '#ff1e27';
+                        eyesCtx.arc(eye.pupilOffset, 0, eye.size * 0.22, 0, Math.PI * 2);
+                        eyesCtx.fill();
+
+                        eyesCtx.beginPath();
+                        eyesCtx.fillStyle = '#000000';
+                        eyesCtx.arc(eye.pupilOffset, 0, eye.size * 0.1, 0, Math.PI * 2);
+                        eyesCtx.fill();
+                    }
+                    eyesCtx.restore();
+                });
+
+                if (Date.now() - start < 2800) {
+                    eyesAnimationId = requestAnimationFrame(drawEyes);
+                } else {
+                    cancelAnimationFrame(eyesAnimationId);
+                    eyesCanvas.style.display = 'none';
+                    if (callback) callback();
+                }
+            }
+            drawEyes();
+        }
+
+        /* ================= 5. 环境恶化控制器 ================= */
+        let submitScore = 0;
+        let resistScore = 0;
+        let currentIndex = 0;
+        let pendingModalCallback = null;
+
+        function updateAtmosphere() {
+            const root = document.documentElement;
+            const brightness = Math.max(0.42, 1 - (resistScore * 0.038));
+            const noise = Math.min(0.25, 0.05 + (resistScore * 0.014));
+            const vignette = Math.max(20, 60 - (resistScore * 3.0));
+
+            root.style.setProperty('--screen-brightness', brightness);
+            root.style.setProperty('--noise-opacity', noise);
+            root.style.setProperty('--vignette-radius', `${vignette}%`);
+
+            if (ambientGain) {
+                ambientGain.gain.setValueAtTime(0.02 + (resistScore * 0.006), audioCtx.currentTime);
+            }
+        }
+
+        /* ================= 6. 20 道沉浸式题目 ================= */
+        const questions = [
+            {
+                q: "1. 此时此刻，你的房间里真的只有你一个人吗？",
+                options: [
+                    { t: "只有我自己，但总觉得有人在身后注视我。", sub: 2, fx: "whisper", msg: "你的直觉很准。我就站在你椅子靠背后面，连呼吸都调成了和你一样的频率。" },
+                    { t: "只有我自己，我把门锁得很紧。", sub: 1, fx: "dialogue", msg: "门锁能挡住外人，但挡不住我。我早就住在你的床底下了。" },
+                    { t: "身边有别人陪着，你少在这里故弄玄虚。", res: 2, fx: "blood_stain", msg: "别人？你的世界里不需要别人。他们很快就会以合理的方式离开你身边。" },
+                    { t: "无聊的把戏，我不信这套。", res: 3, fx: "floating_drift", phrases: ["你在心虚", "看着我", "逃不掉的"], msg: "你按键盘的指尖有些用力。你在心虚，对不对？" }
+                ]
+            },
+            {
+                q: "2. 如果你深夜听见门把手被轻轻往下压的声音，你会：",
+                options: [
+                    { t: "走到门前，主动把门锁拧开迎接我。", sub: 3, fx: "dialogue", msg: "真是个听话的孩子。门推开的时候，我会先给你一个冰凉的拥抱。" },
+                    { t: "屏住呼吸，悄悄走到门后观察。", sub: 1, fx: "blackout", bmsg: "我就贴在猫眼外看着你。你的眼球在转动。", msg: "你从猫眼里看到我了吗？我就在外面朝你微笑。" },
+                    { t: "抓起防身工具，准备迎击。", res: 2, fx: "blade", msg: "把武器放下吧。如果真要见血，我更希望流血的是我，那样你就会一辈子记住我。" },
+                    { t: "大声呵斥并立刻拨打电话求助。", res: 3, fx: "knock", msg: "电话里只有沙沙的杂音。你唯一的依靠，只有门外的我。" }
+                ]
+            },
+            {
+                q: "3. 看着屏幕上映出的微弱反光，你看到了什么？",
+                options: [
+                    { t: "看到了我自己，还有我身后模糊的轮廓。", sub: 3, fx: "whisper", msg: "那不是错觉。把头稍微往后靠一点，就能靠在我的肩膀上了。" },
+                    { t: "屏幕太暗了，什么都看不清。", sub: 1, fx: "dialogue", msg: "看不清也没关系。等会儿我把屏幕按熄，你就能看清我了。" },
+                    { t: "只有我自己，后面空荡荡的什么都没有。", res: 2, fx: "blood_stain", msg: "不要太相信自己的眼睛。有些存在是不需要被光线反射的。" },
+                    { t: "觉得恶心，直接把屏幕亮度调到最低。", res: 3, fx: "flood", flood: "别调暗。看着我。", msg: "就算关掉屏幕，我的气味也已经留在你的房间里了。" }
+                ]
+            },
+            {
+                q: "4. 如果我用备用钥匙打开你的家门，安静地坐在你床头看你入睡：",
+                options: [
+                    { t: "我会把被子分你一半，安心睡去。", sub: 3, fx: "musicbox", msg: "好梦。整整一夜，我都会握着你的手腕，数着你的脉搏直到天亮。" },
+                    { t: "虽然会害怕，但只要你不伤害我就可以。", sub: 2, fx: "dialogue", msg: "我怎么舍得伤害你。你是我在这世上唯一的标本与珍宝。" },
+                    { t: "立刻尖叫着逃出房间并换锁。", res: 2, fx: "blood_stain", msg: "换锁没有用。哪怕你搬到海角天涯，我也会在你新家的地板缝里注视你。" },
+                    { t: "拿起剪刀把你赶出去。", res: 3, fx: "blade", msg: "用剪刀指着我吗。你的手指在发抖，剪刀随时会划伤你自己的。" }
+                ]
+            },
+            {
+                q: "5. 选一件属于我们之间的信物吧。",
+                options: [
+                    { t: "带编号与锁扣的深黑色颈环。", sub: 3, fx: "dialogue", msg: "扣上的那一刻会听见一声脆响。钥匙我会直接吞进肚子里。" },
+                    { t: "系在手腕上永不解开的猩红丝绳。", sub: 2, fx: "blood_stain", msg: "丝绳勒得紧一点，你的血液流动就会带上我的温度。" },
+                    { t: "我凭什么要选你的东西？", res: 2, fx: "force", flood: "你必须选一个。你只能选我给的。", forcedText: "【被修正的选择】：我自愿戴上刻着你名字的项圈。", msg: "这样才乖。不要试图做出多余的挣扎。" },
+                    { t: "把信物扔进垃圾桶焚烧。", res: 3, fx: "blade", msg: "灰烬我也能捡回来。而且下一次，戴在上面的就不会只是项圈了。" }
+                ]
+            },
+            {
+                q: "6. 当你感到脖颈处有一阵冷风吹过时，你的反应是：",
+                options: [
+                    { t: "顺势靠进你的怀抱里。", sub: 3, fx: "whisper", msg: "你的皮肤很热，正好能暖一暖我冰凉的双手。" },
+                    { t: "缩起脖子，不敢乱动。", sub: 1, fx: "dialogue", msg: "真听话。只要你安静待着，我就不会用牙齿咬痛你。" },
+                    { t: "猛地一掌扇向身后。", res: 2, fx: "blood_stain", msg: "手掌落空了对不对。因为我的动作比你快得多。" },
+                    { t: "嫌弃地伸手去擦拭皮肤。", res: 3, fx: "floating_drift", phrases: ["不准擦掉", "这是我的温度", "你属于我"], msg: "越擦只会让气味渗得越深。你身上每一寸都该有我的记号。" }
+                ]
+            },
+            {
+                q: "7. 你现在是不是正在找理由关闭这个网页？",
+                options: [
+                    { t: "没有，我想陪你答到最后一题。", sub: 3, fx: "dialogue", msg: "我也舍不得让你走。每一道题，都是我对你灵魂的丈量。" },
+                    { t: "有一点想逃，但又舍不得离开。", sub: 2, fx: "musicbox", msg: "这种纠结与迟疑，正是你心里有我的最好证明。" },
+                    { t: "是的，我一秒都不想再看到你这种疯子。", res: 4, fx: "soothe", msg: "疯子。我对你付出一切，你却用这两个字回报我。写两句让我舒心的话，否则网页会立刻锁死。" },
+                    { t: "狂按快捷键尝试强退。", res: 3, fx: "flood", flood: "退不掉的。你退不掉的。", msg: "你按得再快，也快不过我对你的执念。" }
+                ]
+            },
+            {
+                q: "8. 【极端情境】如果我把你带进没有窗户的地下房间，只由我一人照顾你：",
+                options: [
+                    { t: "只要有你在，不见天日也没关系。", sub: 3, fx: "dialogue", msg: "地下室很安静，没有外人会来打扰。我们可以相拥着听水滴落下的声音。" },
+                    { t: "会难过，但时间久了或许就习惯了。", sub: 2, fx: "dialogue", msg: "我会每天为你梳头、为你煮饭，让你彻底忘记外界的喧嚣。" },
+                    { t: "我会绝食抗争，直到我生命耗尽。", res: 3, fx: "floating_drift", phrases: ["绝食没有用", "插管喂给你", "死也必须在我怀里"], msg: "那我就用针管把营养液推进你的静脉。你想死，也得经过我的允许。" },
+                    { t: "我会趁你睡着，用铁链勒死你逃跑。", res: 4, fx: "slam_eyes_blood", words: ["杀", "了", "我", "？", "好", "啊"], msg: "好烈的杀意。你眼里的凶光让我浑身的血液都兴奋得发烫了。" }
+                ]
+            },
+            {
+                q: "9. 【视线捕捉】你现在敢回头看一眼你身后的阴影吗？",
+                options: [
+                    { t: "我回头了，我看到你了。", sub: 3, fx: "whisper", msg: "对，保持这个眼神，看着我。不要把目光移开。" },
+                    { t: "我不敢回头，后背有些发凉。", sub: 2, fx: "dialogue", msg: "别怕，发凉是因为我的手掌正悬在你后颈上方三厘米处。" },
+                    { t: "回头看了，除了一堵墙什么都没有。", res: 1, fx: "knock", msg: "墙壁只是障眼法。我就藏在墙纸后面的空隙里。" },
+                    { t: "拒绝配合这种小儿科把戏。", res: 2, fx: "blood_stain", msg: "把戏虽小，但你额头上的汗珠已经落下来了。" }
+                ]
+            },
+            {
+                q: "10. 如果我用银质小刀在你的手腕内侧刻下浅浅的印记：",
+                options: [
+                    { t: "刻深一点，让痕迹变成永久的疤痕。", sub: 3, fx: "blood_stain", msg: "真懂事。疤痕愈合后，哪怕换了皮囊，你也永远是我的私有物。" },
+                    { t: "会很疼，但如果是你，我忍得住。", sub: 2, fx: "dialogue", msg: "我会一边刻，一边吻去每一滴渗出来的血珠，不会弄脏地板。" },
+                    { t: "这是故意伤害，我会拼命反抗。", res: 2, fx: "blade", msg: "反抗只会让刀刃滑偏。乖乖躺好，就不会留下丑陋的伤口。" },
+                    { t: "夺过刀反刺进你的心口。", res: 4, fx: "force", flood: "刺进来。我的血也全属于你。", forcedText: "【纠正】：放下刀刃，顺从地伸出手腕。", msg: "你舍不得杀我的。因为除了我，没人能像我这样全心全意爱你。" }
+                ]
+            },
+            {
+                q: "11. 你的摄像头刚才似乎闪烁了一下微光，你察觉到了吗？",
+                options: [
+                    { t: "察觉到了，我正在对着镜头整理衣领。", sub: 3, fx: "dialogue", msg: "领口微开的样子真好看。我已经把这一帧画面保存下来了。" },
+                    { t: "有些紧张地低下了头。", sub: 1, fx: "whisper", msg: "低头也遮不住你的神态。你的每一根睫毛都在我的监视范围内。" },
+                    { t: "立刻撕下胶布死死封住镜头。", res: 2, fx: "blackout", bmsg: "封住镜头没用。我听得见你的呼吸。", msg: "你挡住了摄像头，但挡不住这间屋子里所有的收音装置。" },
+                    { t: "对着镜头竖起手指嘲弄。", res: 3, fx: "blood_stain", msg: "这双手真漂亮。等把你带回来，第一件事就是给它们套上丝绒手套。" }
+                ]
+            },
+            {
+                q: "12. 【惩戒问答】如果你尝试逃跑被我堵在巷子深处，你希望得到怎样的管教？",
+                options: [
+                    { t: "折断双腿，让我余生只能依赖你生活。", sub: 3, fx: "musicbox", msg: "我会亲手定制最漂亮的轮椅，每天推着你去没有人的花园。" },
+                    { t: "戴上沉重的足镣，步幅不能超过三十厘米。", sub: 2, fx: "dialogue", msg: "金属拖在地板上的清脆响声，会成为我们家里最悦耳的背景音。" },
+                    { t: "哭着向你下跪道歉，乞求原谅。", sub: 1, fx: "dialogue", msg: "眼泪很珍贵，要流在我的掌心里才行。" },
+                    { t: "只要还有一口气，我就一定会再次出逃。", res: 4, fx: "slam_eyes_blood", words: ["你", "逃", "不", "掉", "的"], msg: "再次出逃的代价，是把你的骨头一根根拆下来做成静止的标本。" }
+                ]
+            },
+            {
+                q: "13. 除了我之外，你在这个世界上还有其他留恋的人吗？",
+                options: [
+                    { t: "没有，在遇见你之后，他们就全部褪色了。", sub: 3, fx: "dialogue", msg: "那就好。一个纯净的世界，只需要我们两个人呼吸。" },
+                    { t: "曾经有，但现在我眼里只有你。", sub: 2, fx: "dialogue", msg: "过去的事我可以既往不咎，只要你的未来全部留给我。" },
+                    { t: "我有我深爱的家人和挚友，他们比你重要得多。", res: 3, fx: "floating_drift", phrases: ["抹杀他们", "你只能爱我", "只有我能陪你"], msg: "重要吗。如果他们突然从你的生活里无声无息地蒸发，你就会明白谁才是唯一。" },
+                    { t: "我只爱我自己，你少自作多情。", res: 3, fx: "flood", flood: "你的自我必须属于我。", msg: "自爱是个好习惯。不过很快，你的自我就会被我一点点吞噬干净。" }
+                ]
+            },
+            {
+                q: "14. 此时此刻，听听你周围的环境，是不是太安静了？",
+                options: [
+                    { t: "安静得能听见你在我耳边的呼吸声。", sub: 3, fx: "whisper", msg: "对，呼吸很轻，但从未离开过你的颈侧。" },
+                    { t: "有点压抑，让我心里发慌。", sub: 1, fx: "dialogue", msg: "慌张是正常的。因为命运的锁链正在你身上收紧。" },
+                    { t: "这只是正常的深夜环境音，少装模作样。", res: 2, fx: "knock", msg: "正常吗。那窗外树枝敲打玻璃的节奏，为什么正好与你的脉搏一致？" },
+                    { t: "故意大声咳嗽打破死寂。", res: 2, fx: "blackout", bmsg: "嘘。不要吵到其他人睡觉。", msg: "你弄出的动静越大，我把你嘴捂住的欲望就越强烈。" }
+                ]
+            },
+            {
+                q: "15. 【灵魂对审】在你心底深处，你真的觉得我是个病态的疯子吗？",
+                options: [
+                    { t: "你不是疯子，你是我求之不得的绝对偏爱。", sub: 3, fx: "dialogue", msg: "绝对偏爱。能从你口中听到这句话，我所做的一切罪孽都值得了。" },
+                    { t: "哪怕你病态，我也愿意陪你一起沉沦。", sub: 2, fx: "musicbox", msg: "那我们就手牵着手，一起跳进这片深渊里吧。" },
+                    { t: "你就是个彻头彻尾的变态跟踪狂，无可救药。", res: 4, fx: "soothe", msg: "变态跟踪狂。我对你的每一寸爱护，在你眼里就只是这种词汇吗。打字向我认错，否则测试将以最极端的方式终止。" },
+                    { t: "冷笑一声，拒绝定义你的精神状态。", res: 2, fx: "blood_stain", msg: "你的傲慢不会维持太久的。等锁链套上的那一刻，傲慢会变成温顺的眼泪。" }
+                ]
+            },
+            {
+                q: "16. 【融合之选】如果我们必须在永恒中融为一体，你偏好哪种形式？",
+                options: [
+                    { t: "被你吃进腹中，化作你身体里的细胞与血液。", sub: 3, fx: "blood_stain", msg: "每一寸血肉都会成为我的一部分，我们一辈子都不需要再分离。" },
+                    { t: "在同一张床上被丝线紧密缝合，一起老去腐烂。", sub: 2, fx: "dialogue", msg: "白骨缠绕在一起的时候，连法医也分不清哪一根骨头属于谁。" },
+                    { t: "我宁可自毁容貌跳下高楼，也不会与你结合。", res: 4, fx: "slam_eyes_blood", words: ["融", "为", "一", "体", "吧"], msg: "哪怕你摔得粉碎，残存的血肉也依旧只能由我一块块收殓带走。" },
+                    { t: "拿起打火机把我们两个一起烧成灰烬。", res: 2, fx: "dialogue", msg: "骨灰装在同一个罐子里撒进深海，这算是一种壮烈的浪漫。" }
+                ]
+            },
+            {
+                q: "17. 把手放在你的左胸口。感觉到了吗？你的心脏跳动频率：",
+                options: [
+                    { t: "跳得很快，它正在为你疯狂泵血。", sub: 3, fx: "heartbeat", msg: "扑通，扑通。这声音比任何乐章都要动听。" },
+                    { t: "跳得很紊乱，我整个人都被你压迫得喘不过气。", sub: 2, fx: "dialogue", msg: "喘不过气就靠在我怀里。由我来充当你的肺。" },
+                    { t: "跳得快是因为被你的变态行径给恶心到了。", res: 3, fx: "blood_stain", msg: "恶心吗。那我就把手探进你的胸膛，亲自替你把心跳稳住。" },
+                    { t: "波澜不惊，你根本影响不到我的情绪。", res: 3, fx: "floating_drift", phrases: ["你在撒谎", "心跳好快", "听得很清楚"], msg: "嘴上很硬，但你的瞳孔扩张已经把你的恐惧出卖得干干净净了。" }
+                ]
+            },
+            {
+                q: "18. 你觉得做完这20道题，你真的可以像什么事都没发生一样去睡觉吗？",
+                options: [
+                    { t: "我不睡，我就在这里等着你来接我。", sub: 3, fx: "dialogue", msg: "今晚的风很冷，但我的车已经停在你楼下了。" },
+                    { t: "大概会整夜失眠，疑神疑鬼地看着门窗。", sub: 2, fx: "dialogue", msg: "失眠的时候就看看天花板，我就在上面的阴影里陪着你。" },
+                    { t: "关了网页倒头就睡，你算什么东西。", res: 3, fx: "knock", msg: "睡吧。当你进入深度睡眠的时候，我会轻轻把你的被子往上拉一拉。" },
+                    { t: "彻夜守在门口，手里拿好武器备战。", res: 3, fx: "blade", msg: "守在门口是没用的。你忘了我早就已经拿到你家窗户的锁扣了吗？" }
+                ]
+            },
+            {
+                q: "19. 【深吻与撕咬】如果我吻你的时候，忍不住咬破你的嘴唇吞下你的血：",
+                options: [
+                    { t: "将我的唇舌全交给你，任由你吮吸吞咽。", sub: 3, fx: "blood_stain", msg: "铁锈味与温热感在口腔里蔓延，这是世界上最纯粹的仪式。" },
+                    { t: "闭上眼睛默默忍耐刺痛，不反抗也不推开。", sub: 2, fx: "dialogue", msg: "忍耐的表情真诱人。我会温柔地抚摸你的后背安抚你。" },
+                    { t: "狠狠一口咬断你的舌头，让你尝尝同样的痛苦。", res: 4, fx: "slam_eyes_blood", words: ["血", "真", "甜", "啊"], msg: "满嘴温热的鲜血在舌尖炸开。痛楚只会让我更加确信你该被锁死。" },
+                    { t: "嫌恶地别过脸去，伸手推开你的脸颊。", res: 3, fx: "force", flood: "不准推开。承受我的吻。", forcedText: "【纠正】：闭上眼，迎合这个染血的吻。", msg: "把头摆正。你除了注视我，哪里都不准看。" }
+                ]
+            },
+            {
+                q: "20. 最后一题。为你在我身边的余生挑选最终的注脚吧：",
+                options: [
+                    { t: "【彻底沉沦】我自愿交出全部自由与肉体，请将我永恒囚禁。", sub: 5, ending: true },
+                    { t: "【求生顺服】我认输了……只要不伤害我，我愿意做你的笼中鸟。", sub: 3, ending: true },
+                    { t: "【抵抗到底】去死吧疯子，只要我不死，我一定会亲手杀了你！", res: 5, ending: true },
+                    { t: "【玉石俱焚】我宁死也不会让你得逞分毫，绝不屈服！", res: 5, ending: true }
+                ]
+            }
+        ];
+
+        /* ================= 7. 特效分发系统 ================= */
+        function triggerFx(fxType, opt, idx) {
+            switch (fxType) {
+                case "slam_eyes_blood":
+                    // 究极核弹连招：狂暴狂震 + 血眼睁开 + 逐字拍击血字 + 爆血流淌
+                    triggerSlamEyesBlood(opt.words || ["逃", "不", "掉"], opt.msg);
+                    break;
+                case "floating_drift":
+                    // 狂震 + 幽魂浮动字迹慢速飘移 + 流血
+                    triggerFloatingHorror(opt.phrases || ["看着我", "逃不掉"], opt.msg);
+                    break;
+                case "blood_stain":
+                    soundBladeScrape();
+                    addPermanentBloodDrips(false);
+                    showSimpleModal("渗透", opt.msg, nextQuestion);
+                    break;
+                case "whisper":
+                    soundWhisperPan();
+                    showSimpleModal("低语", opt.msg, nextQuestion);
+                    break;
+                case "blade":
+                    soundBladeScrape();
+                    showSimpleModal("冷刃", opt.msg, nextQuestion);
+                    break;
+                case "musicbox":
+                    soundMusicBox();
+                    showSimpleModal("残响", opt.msg, nextQuestion);
+                    break;
+                case "knock":
+                    soundDoorKnock();
+                    showSimpleModal("门轴响动", opt.msg, nextQuestion);
+                    break;
+                case "heartbeat":
+                    soundHeartbeat();
+                    showSimpleModal("心悸", opt.msg, nextQuestion);
+                    break;
+                case "blackout":
+                    soundHeartbeat();
+                    triggerBlackout(opt.bmsg || "不要动", opt.msg);
+                    break;
+                case "flood":
+                    soundWhisperPan();
+                    triggerFlood(opt.flood || "看着我", opt.msg);
+                    break;
+                case "force":
+                    soundBladeScrape();
+                    triggerForceChoice(opt.flood || "别无选择", opt.forcedText, opt.msg);
+                    break;
+                case "soothe":
+                    soundHeartbeat();
+                    triggerSootheModal(opt.msg);
+                    break;
+                default:
+                    showSimpleModal("我的声音", opt.msg, nextQuestion);
+                    break;
+            }
+        }
+
+        /* ---------------- 特效 1: 暴震 + 逐字拍击血字 + 睁眼 + 爆血 ---------------- */
+        function triggerSlamEyesBlood(words, nextMsg) {
+            soundHeavyThud();
+            document.body.classList.add('hyper-shake');
+
+            // 1. 背景睁开血眼
+            renderBloodshotEyes();
+
+            // 2. 准备逐字拍击
+            const slamOverlay = document.getElementById('slam-overlay');
+            const textBox = document.getElementById('slam-text-box');
+            textBox.innerHTML = '';
+            slamOverlay.style.display = 'flex';
+
+            let charIndex = 0;
+            const interval = setInterval(() => {
+                if (charIndex < words.length) {
+                    soundWordSlam();
+                    const span = document.createElement('span');
+                    span.className = 'slam-char';
+                    span.innerText = words[charIndex];
+                    textBox.appendChild(span);
+
+                    // 每一个字拍上去的位置，立刻爆开并淌下一道血迹
+                    const rect = span.getBoundingClientRect();
+                    addPermanentBloodDrips(false, rect.left + rect.width / 2, rect.top + 30);
+
+                    charIndex++;
+                } else {
+                    clearInterval(interval);
+                    // 拍字完成，重震结束，大片爆血向下流
+                    setTimeout(() => {
+                        document.body.classList.remove('hyper-shake');
+                        addPermanentBloodDrips(true);
+
+                        setTimeout(() => {
+                            slamOverlay.style.display = 'none';
+                            showSimpleModal("视线锁死", nextMsg, nextQuestion);
+                        }, 1400);
+                    }, 800);
+                }
+            }, 320);
+        }
+
+        /* ---------------- 特效 2: 暴震 + 幽魂浮动字迹慢速飘移 ---------------- */
+        function triggerFloatingHorror(phrases, nextMsg) {
+            soundHeavyThud();
+            document.body.classList.add('hyper-shake');
+            addPermanentBloodDrips(true);
+
+            const container = document.getElementById('floating-text-container');
+            container.innerHTML = '';
+            container.style.display = 'block';
+
+            // 生成多个浮动慢移字迹
+            for (let i = 0; i < 9; i++) {
+                const phrase = phrases[i % phrases.length];
+                const div = document.createElement('div');
+                div.className = 'floating-phrase';
+                div.innerText = phrase;
+                div.style.left = `${5 + Math.random() * 80}%`;
+                div.style.top = `${10 + Math.random() * 75}%`;
+                div.style.fontSize = `${1.2 + Math.random() * 1.5}rem`;
+                div.style.animationDelay = `${i * 0.18}s`;
+                container.appendChild(div);
+            }
+
+            setTimeout(() => {
+                document.body.classList.remove('hyper-shake');
+            }, 550);
+
+            setTimeout(() => {
+                container.style.display = 'none';
+                showSimpleModal("低语缠绕", nextMsg, nextQuestion);
+            }, 2600);
+        }
+
+        // 纯黑沉寂
+        function triggerBlackout(title, nextMsg) {
+            const layer = document.getElementById('blackout-layer');
+            const msgEl = document.getElementById('blackout-msg');
+            msgEl.innerText = title;
+            layer.style.display = 'flex';
+
+            setTimeout(() => {
+                layer.style.display = 'none';
+                showSimpleModal("暗处贴近", nextMsg, nextQuestion);
+            }, 1800);
+        }
+
+        // 满屏文字暴走
+        function triggerFlood(phrase, nextMsg) {
+            const overlay = document.getElementById('flood-overlay');
+            overlay.innerHTML = '';
+            overlay.style.display = 'block';
+
+            for (let i = 0; i < 35; i++) {
+                const div = document.createElement('div');
+                div.className = 'flood-item';
+                div.innerText = phrase;
+                div.style.left = `${Math.random() * 85}%`;
+                div.style.top = `${Math.random() * 90}%`;
+                overlay.appendChild(div);
+            }
+
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                showSimpleModal("纠正", nextMsg, nextQuestion);
+            }, 1600);
+        }
+
+        // 强行纠正选项
+        function triggerForceChoice(floodText, forcedText, nextMsg) {
+            const overlay = document.getElementById('flood-overlay');
+            overlay.innerHTML = '';
+            overlay.style.display = 'block';
+
+            for (let i = 0; i < 30; i++) {
+                const div = document.createElement('div');
+                div.className = 'flood-item';
+                div.innerText = floodText;
+                div.style.left = `${Math.random() * 85}%`;
+                div.style.top = `${Math.random() * 90}%`;
+                overlay.appendChild(div);
+            }
+
+            const btns = document.querySelectorAll('.option-btn');
+            btns.forEach((btn, idx) => {
+                if (idx !== 0) {
+                    btn.classList.add('disabled-btn');
+                    btn.innerText = "【选项已被撕毁】";
+                } else {
+                    btn.classList.add('forced-btn');
+                    btn.innerText = forcedText;
+                    btn.onclick = () => {
+                        overlay.style.display = 'none';
+                        showSimpleModal("归位", "这就对了。你永远只有顺从我这一条路可以走。", nextQuestion);
+                    };
+                }
+            });
+
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 1500);
+        }
+
+        // 文字安抚模态框
+        function triggerSootheModal(rageMsg) {
+            const modal = document.getElementById('action-modal');
+            const title = document.getElementById('m-title');
+            const desc = document.getElementById('m-desc');
+            const sootheArea = document.getElementById('soothe-area');
+            const input = document.getElementById('soothe-field');
+            const btn = document.getElementById('m-btn');
+
+            title.innerText = "平静被打破";
+            desc.innerText = rageMsg;
+            sootheArea.style.display = 'flex';
+            input.value = '';
+            btn.innerText = "发送真心话";
+
+            btn.onclick = () => {
+                const val = input.value.trim();
+                const angryWord = /滚|死|杀|神经病|变态|报警|放开|疯子|去死/;
+                const sweetWord = /爱|对不起|陪你|喜欢|我属于你|听话|乖|抱歉|错了/;
+
+                if (!val) {
+                    desc.innerText = "沉默代表你在抗拒。多说几个字，向我证明你还在乎我。";
+                    soundBladeScrape();
+                    return;
+                }
+
+                if (angryWord.test(val)) {
+                    resistScore += 4;
+                    updateAtmosphere();
+                    addPermanentBloodDrips(true);
+                    soundHeavyThud();
+                    document.body.classList.add('hyper-shake');
+                    setTimeout(() => document.body.classList.remove('hyper-shake'), 400);
+
+                    desc.innerText = `“${val}”。你还在试图激怒我。屏幕上的血痕又多了一道。`;
+                    input.value = '';
+                } else if (sweetWord.test(val) || val.length >= 3) {
+                    submitScore += 3;
+                    soundWhisperPan();
+                    desc.innerText = `“${val}”。字句里的温度我收到了。心跳平复了些许，这次先原谅你。`;
+                    sootheArea.style.display = 'none';
+                    btn.innerText = "继续测试";
+                    btn.onclick = () => {
+                        modal.style.display = 'none';
+                        nextQuestion();
+                    };
+                } else {
+                    desc.innerText = `“${val}”。字数太少，敷衍的安抚无法抚平我胸口的燥郁。`;
+                }
+            };
+
+            modal.style.display = 'flex';
+        }
+
+        /* ================= 8. 问答核心流程 ================= */
+        function startGame() {
+            initAudio();
+            initBloodCanvas();
+            initEyesCanvas();
+            renderNoise();
+            document.getElementById('warning-modal').style.display = 'none';
+            renderQuestion();
+        }
+
+        function exitGame() {
+            document.body.innerHTML = `
+                <div style="text-align:center; padding:30px; color:#666;">
+                    <h2 style="color:var(--blood-bright); margin-bottom:12px; letter-spacing:2px;">信号已被单方面切断</h2>
+                    <p style="font-size:0.9rem;">门外的锁孔悄悄转动了半圈。</p>
+                    <p style="margin-top:15px; font-size:0.8rem; color:#333;">今晚入睡前，记得检查一下窗帘后面。</p>
+                </div>
+            `;
+        }
+
+        function renderQuestion() {
+            const qData = questions[currentIndex];
+            document.getElementById('q-number').innerText = `QUESTION ${String(currentIndex + 1).padStart(2, '0')} / 20`;
+            document.getElementById('q-text').innerText = qData.q;
+            document.getElementById('progress').style.width = `${((currentIndex + 1) / 20) * 100}%`;
+
+            const box = document.getElementById('options-box');
+            box.innerHTML = '';
+
+            qData.options.forEach((opt, idx) => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.id = `opt-${idx}`;
+                btn.innerText = opt.t;
+                btn.onclick = () => handleChoice(opt, idx);
+                box.appendChild(btn);
+            });
+        }
+
+        function handleChoice(opt, idx) {
+            soundHeartbeat();
+            if (opt.sub) submitScore += opt.sub;
+            if (opt.res) resistScore += opt.res;
+
+            if (opt.res) {
+                updateAtmosphere();
+            }
+
+            if (opt.ending || currentIndex >= questions.length - 1) {
+                showFinalEnding();
+                return;
+            }
+
+            triggerFx(opt.fx || "dialogue", opt, idx);
+        }
+
+        function nextQuestion() {
+            currentIndex++;
+            renderQuestion();
+        }
+
+        function showSimpleModal(title, desc, callback) {
+            const modal = document.getElementById('action-modal');
+            document.getElementById('m-title').innerText = title;
+            document.getElementById('m-desc').innerText = desc;
+            document.getElementById('soothe-area').style.display = 'none';
+            const btn = document.getElementById('m-btn');
+            btn.innerText = "继续";
+
+            pendingModalCallback = callback;
+            btn.onclick = handleModalConfirm;
+            modal.style.display = 'flex';
+        }
+
+        function handleModalConfirm() {
+            document.getElementById('action-modal').style.display = 'none';
+            if (pendingModalCallback) {
+                pendingModalCallback();
+                pendingModalCallback = null;
+            }
+        }
+
+        /* ================= 9. 双结局清算 ================= */
+        function showFinalEnding() {
+            const panel = document.getElementById('main-panel');
+            soundHeavyThud();
+
+            if (resistScore > submitScore) {
+                // 结局 B：被做成标本
+                panel.innerHTML = `
+                    <div style="text-align:center; padding:10px 0;">
+                        <h2 style="color:var(--blood-bright); font-size:1.6rem; margin-bottom:16px; letter-spacing:2px;">
+                            【 结局 · 不朽标本 】
+                        </h2>
+                        <p style="color:#d4a5a9; font-size:0.96rem; line-height:1.85; margin-bottom:20px; text-align:left;">
+                            反抗值：${resistScore} / 顺从值：${submitScore}。<br><br>
+                            屏幕上的血痕已经彻底干涸凝结了。自始至终，你的眼里都充满了抗拒与逃离的念头。<br>
+                            活着的人会说谎，会背叛，会趁我不备推开窗户逃跑。<br><br>
+                            所以我按停了你的脉搏，放干了你身体里多余的液体，灌入了最澄澈的防腐香料。<br>
+                            现在的你安静地立在我的床头玻璃柜里。你终于不会再眨眼，也不会再对我露出嫌恶的神情。<br>
+                            你是专属于我一人的永恒艺术品。
+                        </p>
+                        <div style="color:var(--blood-bright); font-size:1rem; margin-bottom:20px; letter-spacing:1px;">
+                            电视机屏幕缓缓熄灭为一条白线
+                        </div>
+                        <button class="modal-btn btn-blood" onclick="location.reload()">重置轮回</button>
+                    </div>
+                `;
+            } else {
+                // 结局 A：地下室囚禁
+                panel.innerHTML = `
+                    <div style="text-align:center; padding:10px 0;">
+                        <h2 style="color:var(--blood-bright); font-size:1.6rem; margin-bottom:16px; letter-spacing:2px;">
+                            【 结局 · 笼中共生 】
+                        </h2>
+                        <p style="color:#e1dcdb; font-size:0.96rem; line-height:1.85; margin-bottom:20px; text-align:left;">
+                            顺从值：${submitScore} / 反抗值：${resistScore}。<br><br>
+                            你比我想象的还要乖巧懂事。<br>
+                            地下室的厚重钢门已经落锁，钛合金脚链上包裹着厚厚的丝绒，不会磨破你的脚踝。<br><br>
+                            在这里，没有白昼，没有外人，只有我们彼此的体温。<br>
+                            每一口食物都由我亲自喂给你，每一次入眠我都将你紧紧抱在怀里。<br>
+                            在这个不见天日的房间里，我们会相拥着慢慢老去，直到骨肉化为一体。
+                        </p>
+                        <div style="color:#eb1424; font-size:1rem; margin-bottom:20px; letter-spacing:1px;">
+                            门外传来了挂锁落下的沉闷声响
+                        </div>
+                        <button class="modal-btn btn-blood" onclick="location.reload()">留在地下室（重新开始）</button>
+                    </div>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>
