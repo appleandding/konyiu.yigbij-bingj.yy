@@ -6,14 +6,13 @@
     <title>信号接通中……</title>
     <style>
         :root {
-            --bg: #050405;
+            --bg: #040304;
             --panel: #0c0e12;
             --text-main: #cfcfd4;
             --blood: #7a000c;
             --blood-bright: #eb1424;
             --blood-dark: #330105;
             --glow: rgba(235, 20, 36, 0.45);
-            /* 动态环境恶化变量 */
             --screen-brightness: 1;
             --noise-opacity: 0.05;
             --vignette-radius: 60%;
@@ -40,7 +39,7 @@
             transition: filter 0.8s ease;
         }
 
-        /* 1. CRT 电视机雪花噪点 Canvas */
+        /* 1. CRT 电视机雪花噪点 */
         #noise-canvas {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
@@ -60,13 +59,6 @@
             background-size: 100% 4px, 6px 100%;
             pointer-events: none;
             z-index: 55;
-            animation: crtFlicker 0.15s infinite;
-        }
-
-        @keyframes crtFlicker {
-            0% { opacity: 0.92; }
-            50% { opacity: 0.98; }
-            100% { opacity: 0.94; }
         }
 
         /* 3. 动态暗角 */
@@ -79,17 +71,16 @@
             transition: background 0.8s ease;
         }
 
-        /* 4. 血眼 Canvas */
+        /* 4. 血眼与血泪 Canvas */
         #eyes-canvas {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
             pointer-events: none;
             z-index: 50;
-            background: rgba(0, 0, 0, 0.82);
+            background: rgba(0, 0, 0, 0.88);
         }
 
-        /* 5. 永久性粘滞血痕 Canvas */
         #blood-canvas {
             position: fixed;
             top: 0; left: 0; width: 100vw; height: 100vh;
@@ -97,7 +88,7 @@
             z-index: 52;
         }
 
-        /* 6. 幽魂浮动字迹层 */
+        /* 5. 空间扭曲幽魂字迹层 */
         #floating-text-container {
             display: none;
             position: fixed;
@@ -110,22 +101,23 @@
         .floating-phrase {
             position: absolute;
             color: var(--blood-bright);
-            font-size: 1.4rem;
+            font-size: 1.6rem;
             font-weight: 900;
             white-space: nowrap;
             opacity: 0;
             text-shadow: 0 0 12px var(--blood-bright), 0 0 25px #000;
+            filter: url(#space-warp-filter);
             animation: floatDrift 3.5s cubic-bezier(0.25, 1, 0.5, 1) forwards;
         }
 
         @keyframes floatDrift {
-            0% { opacity: 0; transform: translateY(30px) scale(0.9); }
+            0% { opacity: 0; transform: translateY(30px) rotate(-4deg) scale(0.9); }
             20% { opacity: 0.95; }
-            80% { opacity: 0.85; transform: translateY(-40px) scale(1.05); }
-            100% { opacity: 0; transform: translateY(-70px) scale(1.1); }
+            80% { opacity: 0.85; transform: translateY(-40px) rotate(4deg) scale(1.05); }
+            100% { opacity: 0; transform: translateY(-70px) rotate(-2deg) scale(1.1); }
         }
 
-        /* 7. 逐字拍击血字印屏覆盖层 */
+        /* 6. 空间扭曲拍击血字层 */
         #slam-overlay {
             display: none;
             position: fixed;
@@ -138,22 +130,23 @@
         }
 
         .slam-char {
-            font-size: 4.8rem;
+            font-size: 5.2rem;
             font-weight: 900;
             color: var(--blood-bright);
             text-shadow: 0 0 25px var(--blood-bright), 0 0 45px #000, 2px 2px 0px #fff;
             letter-spacing: 8px;
             display: inline-block;
+            filter: url(#slam-warp-filter);
             animation: charSlam 0.22s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
         }
 
         @keyframes charSlam {
-            0% { transform: scale(3.5); opacity: 0; filter: blur(10px); }
-            70% { transform: scale(0.9); opacity: 1; filter: blur(0); }
-            100% { transform: scale(1); opacity: 1; }
+            0% { transform: scale(3.5) rotate(15deg); opacity: 0; filter: blur(12px) url(#slam-warp-filter); }
+            70% { transform: scale(0.9) rotate(-3deg); opacity: 1; filter: blur(0) url(#slam-warp-filter); }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
         }
 
-        /* 超剧烈核爆级全屏狂震 */
+        /* 超剧烈狂震 */
         .hyper-shake {
             animation: hyperViolentShake 0.08s infinite alternate !important;
         }
@@ -166,7 +159,30 @@
             100% { transform: translate(-10px, 8px) rotate(-1deg) scale(1.02); }
         }
 
-        /* 主面板 */
+        /* 疯狂全屏闪烁（血光/黑白高频频闪） */
+        .crazy-strobe {
+            animation: crazyStrobeAnim 0.09s infinite alternate !important;
+        }
+
+        @keyframes crazyStrobeAnim {
+            0% { background-color: #040304; filter: invert(0) brightness(1); }
+            33% { background-color: #7a000c; filter: invert(0.8) brightness(1.8) contrast(1.8); }
+            66% { background-color: #ffffff; filter: invert(1) brightness(2.5) contrast(2); }
+            100% { background-color: #3b0005; filter: invert(0) brightness(0.7); }
+        }
+
+        /* 序幕敲门全屏界面 */
+        #prologue-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(4, 3, 4, 0.98);
+            justify-content: center;
+            align-items: center;
+            z-index: 120;
+        }
+
+        /* 主答题面板 */
         .container {
             width: 92%;
             max-width: 640px;
@@ -387,16 +403,33 @@
             opacity: 0.75;
             white-space: nowrap;
             letter-spacing: 1px;
+            filter: url(#space-warp-filter);
         }
     </style>
 </head>
 <body id="body-node">
 
+    <!-- 0. SVG 空间扭曲滤镜 -->
+    <svg style="position: absolute; width: 0; height: 0; overflow: hidden;" aria-hidden="true">
+        <filter id="space-warp-filter">
+            <feTurbulence type="fractalNoise" baseFrequency="0.03 0.08" numOctaves="2" result="warp">
+                <animate attributeName="baseFrequency" values="0.02 0.06;0.05 0.12;0.02 0.06" dur="3s" repeatCount="indefinite" />
+            </feTurbulence>
+            <feDisplacementMap in="SourceGraphic" in2="warp" scale="14" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+        <filter id="slam-warp-filter">
+            <feTurbulence type="turbulence" baseFrequency="0.04 0.09" numOctaves="3" result="turb">
+                <animate attributeName="baseFrequency" values="0.04 0.09;0.08 0.15;0.04 0.09" dur="1.8s" repeatCount="indefinite" />
+            </feTurbulence>
+            <feDisplacementMap in="SourceGraphic" in2="turb" scale="22" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+    </svg>
+
     <!-- 1. CRT 电视机雪花噪点 -->
     <canvas id="noise-canvas"></canvas>
     <div class="crt-scanlines"></div>
 
-    <!-- 2. 暗角、血眼、血痕、漂浮字迹与拍字覆盖层 -->
+    <!-- 2. 暗角、血眼、血痕、空间扭曲字迹与拍字覆盖层 -->
     <div id="tunnel-vignette"></div>
     <canvas id="eyes-canvas"></canvas>
     <canvas id="blood-canvas"></canvas>
@@ -411,22 +444,38 @@
         <div id="blackout-msg">不要动</div>
     </div>
 
-    <!-- 4. 开局预警 -->
+    <!-- 4. 开局免责预警 -->
     <div id="warning-modal" class="modal-mask" style="display: flex;">
         <div class="modal-box">
             <div class="modal-title">信号接入预警</div>
             <div class="modal-desc">
-                本页面包含 **高烈度剧烈全屏震颤、血眼凝视、血字拍击屏幕、逐步恶化的永久血痕** 与第一人称病娇心理支配。<br><br>
-                你的每一次违抗都会导致画面永久恶化。如果感到眼部或心理不适，请随时退出。
+                本测试包含 **疯狂全屏频闪、血眼睁开并流淌血泪、空间扭曲活体血字、剧烈狂震与脚步逼近**。<br><br>
+                画面将随你的抉择永久恶化。如果感到不适，请随时退出。
             </div>
             <div class="modal-btns">
                 <button class="modal-btn btn-ghost" onclick="exitGame()">掐断信号</button>
-                <button class="modal-btn btn-blood" onclick="startGame()">调频接入，开始测试</button>
+                <button class="modal-btn btn-blood" onclick="startPrologueSequence()">调频接入</button>
             </div>
         </div>
     </div>
 
-    <!-- 5. 通用交互模态框 -->
+    <!-- 5. 序幕：深夜敲门死局 -->
+    <div id="prologue-modal">
+        <div class="modal-box" id="prologue-box">
+            <div class="modal-title" id="prologue-title" style="color: #ff3344;">【 深夜 00:44 】</div>
+            <div class="modal-desc" id="prologue-desc" style="font-size: 1.05rem; line-height: 1.9;">
+                你在房间里听见了门外传来的沉闷敲门声。<br>
+                笃……笃……笃……<br>
+                “我知道你在里面。把门打开，让我进来好不好？”
+            </div>
+            <div class="modal-btns" style="justify-content: center; gap: 20px;" id="prologue-btns">
+                <button class="modal-btn btn-blood" id="btn-open-door" onclick="acceptOpenDoor()">【开门】 握住门把手拧开</button>
+                <button class="modal-btn btn-ghost" id="btn-refuse-door" onclick="refuseOpenDoor()">【不开】 死死抵住门板，绝不开门</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. 通用交互模态框 -->
     <div id="action-modal" class="modal-mask">
         <div class="modal-box">
             <div class="modal-title" id="m-title">来自我的话</div>
@@ -443,7 +492,7 @@
         </div>
     </div>
 
-    <!-- 6. 主答题面板 -->
+    <!-- 7. 主答题面板 -->
     <div class="container" id="main-panel">
         <div class="progress-bar">
             <div class="progress-inner" id="progress"></div>
@@ -468,7 +517,6 @@
             }
         }
 
-        // CRT 背景电流微嗡
         function startAmbientHum() {
             try {
                 const humOsc = audioCtx.createOscillator();
@@ -482,23 +530,65 @@
             } catch(e) {}
         }
 
-        // 低频心跳重击
-        function soundHeartbeat() {
+        function soundSingleKnock(vol = 0.5, pitch = 75) {
             if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(50, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.22);
-            gain.gain.setValueAtTime(0.75, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.22);
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(pitch, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(25, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
             osc.start();
-            osc.stop(audioCtx.currentTime + 0.22);
+            osc.stop(audioCtx.currentTime + 0.1);
         }
 
-        // 超重击震荡（用于狂暴震颤）
+        function soundApproachingFootsteps(callback) {
+            if (!audioCtx) return;
+            const stepCount = 6;
+            for (let i = 0; i < stepCount; i++) {
+                const delay = i * 0.45;
+                const progress = (i + 1) / stepCount;
+                const vol = 0.1 + progress * 0.75;
+                const panVal = -0.7 + progress * 0.7;
+
+                setTimeout(() => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    let panner = null;
+                    try {
+                        panner = audioCtx.createStereoPanner();
+                        panner.pan.setValueAtTime(panVal, audioCtx.currentTime);
+                    } catch(e) {}
+
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(95 + i * 8, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.16);
+                    gain.gain.setValueAtTime(vol, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.16);
+
+                    if (panner) {
+                        osc.connect(panner);
+                        panner.connect(gain);
+                    } else {
+                        osc.connect(gain);
+                    }
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.16);
+
+                    document.body.style.transform = `translate(${(Math.random()-0.5)*progress*8}px, ${(Math.random()-0.5)*progress*8}px)`;
+                    setTimeout(() => document.body.style.transform = '', 100);
+
+                    if (i === stepCount - 1 && callback) {
+                        setTimeout(callback, 500);
+                    }
+                }, delay * 1000);
+            }
+        }
+
         function soundHeavyThud() {
             if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
@@ -514,7 +604,6 @@
             osc.stop(audioCtx.currentTime + 0.5);
         }
 
-        // 血字拍击重响（单字拍屏音效）
         function soundWordSlam() {
             if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
@@ -522,7 +611,7 @@
             osc.type = 'square';
             osc.frequency.setValueAtTime(140, audioCtx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.18);
-            gain.gain.setValueAtTime(0.7, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.75, audioCtx.currentTime);
             gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.18);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
@@ -530,7 +619,6 @@
             osc.stop(audioCtx.currentTime + 0.18);
         }
 
-        // 刀刃金属刮擦
         function soundBladeScrape() {
             if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
@@ -546,7 +634,6 @@
             osc.stop(audioCtx.currentTime + 0.5);
         }
 
-        // 诡异八音盒
         function soundMusicBox() {
             if (!audioCtx) return;
             const notes = [587.33, 622.25, 493.88];
@@ -564,7 +651,6 @@
             });
         }
 
-        // 双声道低语
         function soundWhisperPan() {
             if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
@@ -593,47 +679,39 @@
             osc.stop(audioCtx.currentTime + 0.6);
         }
 
-        // 沉闷敲门声
-        function soundDoorKnock() {
+        function soundHeartbeat() {
             if (!audioCtx) return;
-            for (let i = 0; i < 3; i++) {
-                const osc = audioCtx.createOscillator();
-                const gain = audioCtx.createGain();
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(75, audioCtx.currentTime + i * 0.14);
-                osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + i * 0.14 + 0.08);
-                gain.gain.setValueAtTime(0.4, audioCtx.currentTime + i * 0.14);
-                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.14 + 0.08);
-                osc.connect(gain);
-                gain.connect(audioCtx.destination);
-                osc.start(audioCtx.currentTime + i * 0.14);
-                osc.stop(audioCtx.currentTime + i * 0.14 + 0.08);
-            }
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(50, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.22);
+            gain.gain.setValueAtTime(0.75, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.22);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.22);
         }
 
-        /* ================= 2. CRT 电视雪花噪点引擎 ================= */
+        /* ================= 2. CRT 电视雪花噪点 ================= */
         const noiseCanvas = document.getElementById('noise-canvas');
         const noiseCtx = noiseCanvas.getContext('2d');
-        const noiseWidth = 160;
-        const noiseHeight = 120;
-        noiseCanvas.width = noiseWidth;
-        noiseCanvas.height = noiseHeight;
+        noiseCanvas.width = 160;
+        noiseCanvas.height = 120;
 
         function renderNoise() {
-            const imgData = noiseCtx.createImageData(noiseWidth, noiseHeight);
+            const imgData = noiseCtx.createImageData(160, 120);
             const data = imgData.data;
             for (let i = 0; i < data.length; i += 4) {
                 const val = Math.random() * 255;
-                data[i] = val;
-                data[i + 1] = val;
-                data[i + 2] = val;
-                data[i + 3] = 255;
+                data[i] = val; data[i + 1] = val; data[i + 2] = val; data[i + 3] = 255;
             }
             noiseCtx.putImageData(imgData, 0, 0);
             requestAnimationFrame(renderNoise);
         }
 
-        /* ================= 3. 永久粘滞血痕系统 ================= */
+        /* ================= 3. 永久粘滞血痕 Canvas ================= */
         const bloodCanvas = document.getElementById('blood-canvas');
         const bloodCtx = bloodCanvas.getContext('2d');
         let persistentStains = [];
@@ -705,7 +783,7 @@
             animateNewDrips();
         }
 
-        /* ================= 4. 血眼渲染引擎 ================= */
+        /* ================= 4. 疯狂睁眼 + 溢出血泪演算引擎 ================= */
         const eyesCanvas = document.getElementById('eyes-canvas');
         const eyesCtx = eyesCanvas.getContext('2d');
         let eyesList = [];
@@ -723,30 +801,37 @@
         function renderBloodshotEyes(callback) {
             eyesCanvas.style.display = 'block';
             eyesList = [];
-            for (let i = 0; i < 35; i++) {
+            
+            // 生成密集血眼群，并赋予眼角泪腺坐标
+            for (let i = 0; i < 45; i++) {
                 eyesList.push({
                     x: Math.random() * eyesCanvas.width,
-                    y: Math.random() * eyesCanvas.height,
-                    size: 22 + Math.random() * 48,
+                    y: Math.random() * (eyesCanvas.height * 0.85),
+                    size: 20 + Math.random() * 45,
                     openProgress: 0,
-                    openSpeed: 0.05 + Math.random() * 0.08,
-                    pupilOffset: (Math.random() - 0.5) * 6
+                    openSpeed: 0.06 + Math.random() * 0.1,
+                    pupilOffset: (Math.random() - 0.5) * 6,
+                    tearProgress: 0,
+                    tearMaxLen: 80 + Math.random() * 250,
+                    tearSpeed: 3.5 + Math.random() * 5
                 });
             }
 
             let start = Date.now();
-            function drawEyes() {
+            function drawEyesAndTears() {
                 eyesCtx.clearRect(0, 0, eyesCanvas.width, eyesCanvas.height);
+
                 eyesList.forEach(eye => {
                     if (eye.openProgress < 1) eye.openProgress += eye.openSpeed;
+
+                    // 1. 绘制眼眶与瞳孔
                     eyesCtx.save();
                     eyesCtx.translate(eye.x, eye.y);
 
-                    // 眼眶
                     eyesCtx.beginPath();
                     eyesCtx.strokeStyle = '#eb1424';
                     eyesCtx.lineWidth = 2.5;
-                    eyesCtx.fillStyle = '#140003';
+                    eyesCtx.fillStyle = '#110002';
                     const h = (eye.size * 0.45) * eye.openProgress;
                     eyesCtx.moveTo(-eye.size, 0);
                     eyesCtx.quadraticCurveTo(0, -h * 2, eye.size, 0);
@@ -754,7 +839,6 @@
                     eyesCtx.fill();
                     eyesCtx.stroke();
 
-                    // 血丝瞳孔
                     if (eye.openProgress > 0.25) {
                         eyesCtx.beginPath();
                         eyesCtx.fillStyle = '#ff1e27';
@@ -767,20 +851,119 @@
                         eyesCtx.fill();
                     }
                     eyesCtx.restore();
+
+                    // 2. 绘制眼眶溢出的流淌血泪 (从下眼睑中心和眼角淌落)
+                    if (eye.openProgress > 0.6) {
+                        if (eye.tearProgress < eye.tearMaxLen) {
+                            eye.tearProgress += eye.tearSpeed;
+                        }
+
+                        eyesCtx.beginPath();
+                        eyesCtx.strokeStyle = '#ff0015';
+                        eyesCtx.lineWidth = 2.8;
+                        eyesCtx.lineCap = 'round';
+                        // 下眼睑泪痕
+                        eyesCtx.moveTo(eye.x, eye.y + h);
+                        eyesCtx.lineTo(eye.x, eye.y + h + eye.tearProgress);
+                        // 眼角侧向血泪
+                        eyesCtx.moveTo(eye.x - eye.size * 0.6, eye.y);
+                        eyesCtx.lineTo(eye.x - eye.size * 0.6, eye.y + (eye.tearProgress * 0.7));
+                        eyesCtx.stroke();
+
+                        // 泪滴圆头
+                        eyesCtx.fillStyle = '#7a000c';
+                        eyesCtx.beginPath();
+                        eyesCtx.arc(eye.x, eye.y + h + eye.tearProgress, 2.5, 0, Math.PI * 2);
+                        eyesCtx.fill();
+                    }
                 });
 
-                if (Date.now() - start < 2800) {
-                    eyesAnimationId = requestAnimationFrame(drawEyes);
+                if (Date.now() - start < 3200) {
+                    eyesAnimationId = requestAnimationFrame(drawEyesAndTears);
                 } else {
                     cancelAnimationFrame(eyesAnimationId);
                     eyesCanvas.style.display = 'none';
+
+                    // 血泪渗入永久背景画布
+                    eyesList.forEach(eye => {
+                        addPermanentBloodDrips(false, eye.x, eye.y + 10);
+                    });
+
                     if (callback) callback();
                 }
             }
-            drawEyes();
+            drawEyesAndTears();
         }
 
-        /* ================= 5. 环境恶化控制器 ================= */
+        /* ================= 5. 序幕敲门交互 ================= */
+        let frenzyKnockTimer = null;
+        let knockInterval = 650;
+
+        function startPrologueSequence() {
+            initAudio();
+            initBloodCanvas();
+            initEyesCanvas();
+            renderNoise();
+            document.getElementById('warning-modal').style.display = 'none';
+
+            const prologueModal = document.getElementById('prologue-modal');
+            prologueModal.style.display = 'flex';
+
+            soundSingleKnock(0.6, 70);
+            setTimeout(() => soundSingleKnock(0.65, 70), 500);
+            setTimeout(() => soundSingleKnock(0.7, 70), 1000);
+        }
+
+        function refuseOpenDoor() {
+            resistScore += 4;
+            updateAtmosphere();
+            addPermanentBloodDrips(true);
+
+            // 屏幕瞬间爆发极度狂震 + 疯狂闪烁
+            document.body.classList.add('hyper-shake');
+            document.body.classList.add('crazy-strobe');
+
+            const desc = document.getElementById('prologue-desc');
+            const refuseBtn = document.getElementById('btn-refuse-door');
+            const openBtn = document.getElementById('btn-open-door');
+
+            desc.innerHTML = `
+                <span style="color: #ff0022; font-size: 1.25rem; font-weight: bold; filter: url(#space-warp-filter);">
+                    “不开门？开门！开门！开门！我知道你就在门板后面！让我进去！！”
+                </span><br>
+                门外传来疯狂砸门的狂暴撞击声，门锁正发出扭曲哀鸣。
+            `;
+
+            refuseBtn.style.display = 'none';
+            openBtn.innerText = "【快开门！拉开门锁！】";
+            openBtn.classList.add('forced-btn');
+            openBtn.style.fontSize = "1.1rem";
+            openBtn.style.padding = "14px 28px";
+
+            knockInterval = 320;
+            function accelerateKnock() {
+                soundSingleKnock(0.95, 90 + Math.random() * 40);
+                if (knockInterval > 70) knockInterval -= 25;
+                frenzyKnockTimer = setTimeout(accelerateKnock, knockInterval);
+            }
+            accelerateKnock();
+        }
+
+        function acceptOpenDoor() {
+            if (frenzyKnockTimer) clearTimeout(frenzyKnockTimer);
+            document.body.classList.remove('hyper-shake');
+            document.body.classList.remove('crazy-strobe');
+
+            soundBladeScrape();
+            soundSingleKnock(1.0, 50);
+
+            const prologueModal = document.getElementById('prologue-modal');
+            prologueModal.style.display = 'none';
+
+            renderQuestion();
+        }
+
+        /* ================= 6. 环境恶化控制器 ================= */
         let submitScore = 0;
         let resistScore = 0;
         let currentIndex = 0;
@@ -801,10 +984,10 @@
             }
         }
 
-        /* ================= 6. 20 道沉浸式题目 ================= */
+        /* ================= 7. 20 道沉浸式题目 ================= */
         const questions = [
             {
-                q: "1. 此时此刻，你的房间里真的只有你一个人吗？",
+                q: "1. 门已经开了。此时此刻，你真的以为房间里只有你一个人吗？",
                 options: [
                     { t: "只有我自己，但总觉得有人在身后注视我。", sub: 2, fx: "whisper", msg: "你的直觉很准。我就站在你椅子靠背后面，连呼吸都调成了和你一样的频率。" },
                     { t: "只有我自己，我把门锁得很紧。", sub: 1, fx: "dialogue", msg: "门锁能挡住外人，但挡不住我。我早就住在你的床底下了。" },
@@ -813,12 +996,12 @@
                 ]
             },
             {
-                q: "2. 如果你深夜听见门把手被轻轻往下压的声音，你会：",
+                q: "2. 听……走廊深处似乎传来了皮鞋踩在地板上的沉重脚步声：",
                 options: [
-                    { t: "走到门前，主动把门锁拧开迎接我。", sub: 3, fx: "dialogue", msg: "真是个听话的孩子。门推开的时候，我会先给你一个冰凉的拥抱。" },
+                    { t: "站在原地，听着脚步声一步步走向我的房门。", sub: 3, fx: "footsteps", msg: "嗒……嗒……脚步停在你门前了。我就在门缝外注视着你。" },
                     { t: "屏住呼吸，悄悄走到门后观察。", sub: 1, fx: "blackout", bmsg: "我就贴在猫眼外看着你。你的眼球在转动。", msg: "你从猫眼里看到我了吗？我就在外面朝你微笑。" },
                     { t: "抓起防身工具，准备迎击。", res: 2, fx: "blade", msg: "把武器放下吧。如果真要见血，我更希望流血的是我，那样你就会一辈子记住我。" },
-                    { t: "大声呵斥并立刻拨打电话求助。", res: 3, fx: "knock", msg: "电话里只有沙沙的杂音。你唯一的依靠，只有门外的我。" }
+                    { t: "大声呵斥并立刻拨打电话求助。", res: 3, fx: "slam_eyes_blood", words: ["没", "有", "信", "号"], msg: "电话里只有沙沙的杂音。你唯一的依靠，只有门外的我。" }
                 ]
             },
             {
@@ -836,7 +1019,7 @@
                     { t: "我会把被子分你一半，安心睡去。", sub: 3, fx: "musicbox", msg: "好梦。整整一夜，我都会握着你的手腕，数着你的脉搏直到天亮。" },
                     { t: "虽然会害怕，但只要你不伤害我就可以。", sub: 2, fx: "dialogue", msg: "我怎么舍得伤害你。你是我在这世上唯一的标本与珍宝。" },
                     { t: "立刻尖叫着逃出房间并换锁。", res: 2, fx: "blood_stain", msg: "换锁没有用。哪怕你搬到海角天涯，我也会在你新家的地板缝里注视你。" },
-                    { t: "拿起剪刀把你赶出去。", res: 3, fx: "blade", msg: "用剪刀指着我吗。你的手指在发抖，剪刀随时会划伤你自己的。" }
+                    { t: "拿起剪刀把我赶出去。", res: 3, fx: "blade", msg: "用剪刀指着我吗。你的手指在发抖，剪刀随时会划伤你自己的。" }
                 ]
             },
             {
@@ -876,11 +1059,11 @@
                 ]
             },
             {
-                q: "9. 【视线捕捉】你现在敢回头看一眼你身后的阴影吗？",
+                q: "9. 听，走廊里的脚步声又响起来了，这一次它正在离你越来越近：",
                 options: [
-                    { t: "我回头了，我看到你了。", sub: 3, fx: "whisper", msg: "对，保持这个眼神，看着我。不要把目光移开。" },
+                    { t: "坐正身体，等待你推门而入。", sub: 3, fx: "footsteps", msg: "每走近一步，我的心跳就为你加快一分。" },
                     { t: "我不敢回头，后背有些发凉。", sub: 2, fx: "dialogue", msg: "别怕，发凉是因为我的手掌正悬在你后颈上方三厘米处。" },
-                    { t: "回头看了，除了一堵墙什么都没有。", res: 1, fx: "knock", msg: "墙壁只是障眼法。我就藏在墙纸后面的空隙里。" },
+                    { t: "回头看了一眼，空无一人。", res: 1, fx: "blade", msg: "空无一人吗？你再看一眼地上的影子。" },
                     { t: "拒绝配合这种小儿科把戏。", res: 2, fx: "blood_stain", msg: "把戏虽小，但你额头上的汗珠已经落下来了。" }
                 ]
             },
@@ -921,11 +1104,11 @@
                 ]
             },
             {
-                q: "14. 此时此刻，听听你周围的环境，是不是太安静了？",
+                q: "14. 此时此刻，听听你周围的环境，脚步声是不是已经走到你的房门口了？",
                 options: [
-                    { t: "安静得能听见你在我耳边的呼吸声。", sub: 3, fx: "whisper", msg: "对，呼吸很轻，但从未离开过你的颈侧。" },
+                    { t: "听到了，门缝下有阴影在晃动。", sub: 3, fx: "whisper", msg: "对，我就站在门外。你一回头，就能透过门缝看见我的眼睛。" },
                     { t: "有点压抑，让我心里发慌。", sub: 1, fx: "dialogue", msg: "慌张是正常的。因为命运的锁链正在你身上收紧。" },
-                    { t: "这只是正常的深夜环境音，少装模作样。", res: 2, fx: "knock", msg: "正常吗。那窗外树枝敲打玻璃的节奏，为什么正好与你的脉搏一致？" },
+                    { t: "这只是正常的深夜环境音，少装模作样。", res: 2, fx: "footsteps", msg: "正常吗？那门把手正在被缓缓压下的声音，你听得清吗？" },
                     { t: "故意大声咳嗽打破死寂。", res: 2, fx: "blackout", bmsg: "嘘。不要吵到其他人睡觉。", msg: "你弄出的动静越大，我把你嘴捂住的欲望就越强烈。" }
                 ]
             },
@@ -961,7 +1144,7 @@
                 options: [
                     { t: "我不睡，我就在这里等着你来接我。", sub: 3, fx: "dialogue", msg: "今晚的风很冷，但我的车已经停在你楼下了。" },
                     { t: "大概会整夜失眠，疑神疑鬼地看着门窗。", sub: 2, fx: "dialogue", msg: "失眠的时候就看看天花板，我就在上面的阴影里陪着你。" },
-                    { t: "关了网页倒头就睡，你算什么东西。", res: 3, fx: "knock", msg: "睡吧。当你进入深度睡眠的时候，我会轻轻把你的被子往上拉一拉。" },
+                    { t: "关了网页倒头就睡，你算什么东西。", res: 3, fx: "footsteps", msg: "睡吧。当你进入深度睡眠的时候，我会轻轻把你的被子往上拉一拉。" },
                     { t: "彻夜守在门口，手里拿好武器备战。", res: 3, fx: "blade", msg: "守在门口是没用的。你忘了我早就已经拿到你家窗户的锁扣了吗？" }
                 ]
             },
@@ -985,16 +1168,19 @@
             }
         ];
 
-        /* ================= 7. 特效分发系统 ================= */
+        /* ================= 8. 特效分发 ================= */
         function triggerFx(fxType, opt, idx) {
             switch (fxType) {
                 case "slam_eyes_blood":
-                    // 究极核弹连招：狂暴狂震 + 血眼睁开 + 逐字拍击血字 + 爆血流淌
                     triggerSlamEyesBlood(opt.words || ["逃", "不", "掉"], opt.msg);
                     break;
                 case "floating_drift":
-                    // 狂震 + 幽魂浮动字迹慢速飘移 + 流血
                     triggerFloatingHorror(opt.phrases || ["看着我", "逃不掉"], opt.msg);
+                    break;
+                case "footsteps":
+                    soundApproachingFootsteps(() => {
+                        showSimpleModal("逼近", opt.msg, nextQuestion);
+                    });
                     break;
                 case "blood_stain":
                     soundBladeScrape();
@@ -1012,10 +1198,6 @@
                 case "musicbox":
                     soundMusicBox();
                     showSimpleModal("残响", opt.msg, nextQuestion);
-                    break;
-                case "knock":
-                    soundDoorKnock();
-                    showSimpleModal("门轴响动", opt.msg, nextQuestion);
                     break;
                 case "heartbeat":
                     soundHeartbeat();
@@ -1043,15 +1225,14 @@
             }
         }
 
-        /* ---------------- 特效 1: 暴震 + 逐字拍击血字 + 睁眼 + 爆血 ---------------- */
+        /* ---------------- 特效 1: 疯狂频闪 + 暴震 + 血字拍击 + 睁眼血泪流淌 ---------------- */
         function triggerSlamEyesBlood(words, nextMsg) {
             soundHeavyThud();
             document.body.classList.add('hyper-shake');
+            document.body.classList.add('crazy-strobe');
 
-            // 1. 背景睁开血眼
             renderBloodshotEyes();
 
-            // 2. 准备逐字拍击
             const slamOverlay = document.getElementById('slam-overlay');
             const textBox = document.getElementById('slam-text-box');
             textBox.innerHTML = '';
@@ -1066,16 +1247,15 @@
                     span.innerText = words[charIndex];
                     textBox.appendChild(span);
 
-                    // 每一个字拍上去的位置，立刻爆开并淌下一道血迹
                     const rect = span.getBoundingClientRect();
                     addPermanentBloodDrips(false, rect.left + rect.width / 2, rect.top + 30);
 
                     charIndex++;
                 } else {
                     clearInterval(interval);
-                    // 拍字完成，重震结束，大片爆血向下流
                     setTimeout(() => {
                         document.body.classList.remove('hyper-shake');
+                        document.body.classList.remove('crazy-strobe');
                         addPermanentBloodDrips(true);
 
                         setTimeout(() => {
@@ -1087,17 +1267,17 @@
             }, 320);
         }
 
-        /* ---------------- 特效 2: 暴震 + 幽魂浮动字迹慢速飘移 ---------------- */
+        /* ---------------- 特效 2: 暴震 + 幽魂浮动字迹 ---------------- */
         function triggerFloatingHorror(phrases, nextMsg) {
             soundHeavyThud();
             document.body.classList.add('hyper-shake');
+            document.body.classList.add('crazy-strobe');
             addPermanentBloodDrips(true);
 
             const container = document.getElementById('floating-text-container');
             container.innerHTML = '';
             container.style.display = 'block';
 
-            // 生成多个浮动慢移字迹
             for (let i = 0; i < 9; i++) {
                 const phrase = phrases[i % phrases.length];
                 const div = document.createElement('div');
@@ -1105,13 +1285,14 @@
                 div.innerText = phrase;
                 div.style.left = `${5 + Math.random() * 80}%`;
                 div.style.top = `${10 + Math.random() * 75}%`;
-                div.style.fontSize = `${1.2 + Math.random() * 1.5}rem`;
+                div.style.fontSize = `${1.3 + Math.random() * 1.4}rem`;
                 div.style.animationDelay = `${i * 0.18}s`;
                 container.appendChild(div);
             }
 
             setTimeout(() => {
                 document.body.classList.remove('hyper-shake');
+                document.body.classList.remove('crazy-strobe');
             }, 550);
 
             setTimeout(() => {
@@ -1120,7 +1301,6 @@
             }, 2600);
         }
 
-        // 纯黑沉寂
         function triggerBlackout(title, nextMsg) {
             const layer = document.getElementById('blackout-layer');
             const msgEl = document.getElementById('blackout-msg');
@@ -1133,7 +1313,6 @@
             }, 1800);
         }
 
-        // 满屏文字暴走
         function triggerFlood(phrase, nextMsg) {
             const overlay = document.getElementById('flood-overlay');
             overlay.innerHTML = '';
@@ -1154,7 +1333,6 @@
             }, 1600);
         }
 
-        // 强行纠正选项
         function triggerForceChoice(floodText, forcedText, nextMsg) {
             const overlay = document.getElementById('flood-overlay');
             overlay.innerHTML = '';
@@ -1189,7 +1367,6 @@
             }, 1500);
         }
 
-        // 文字安抚模态框
         function triggerSootheModal(rageMsg) {
             const modal = document.getElementById('action-modal');
             const title = document.getElementById('m-title');
@@ -1243,16 +1420,7 @@
             modal.style.display = 'flex';
         }
 
-        /* ================= 8. 问答核心流程 ================= */
-        function startGame() {
-            initAudio();
-            initBloodCanvas();
-            initEyesCanvas();
-            renderNoise();
-            document.getElementById('warning-modal').style.display = 'none';
-            renderQuestion();
-        }
-
+        /* ================= 9. 核心问答流程 ================= */
         function exitGame() {
             document.body.innerHTML = `
                 <div style="text-align:center; padding:30px; color:#666;">
@@ -1325,16 +1493,15 @@
             }
         }
 
-        /* ================= 9. 双结局清算 ================= */
+        /* ================= 10. 双结局清算 ================= */
         function showFinalEnding() {
             const panel = document.getElementById('main-panel');
             soundHeavyThud();
 
             if (resistScore > submitScore) {
-                // 结局 B：被做成标本
                 panel.innerHTML = `
                     <div style="text-align:center; padding:10px 0;">
-                        <h2 style="color:var(--blood-bright); font-size:1.6rem; margin-bottom:16px; letter-spacing:2px;">
+                        <h2 style="color:var(--blood-bright); font-size:1.6rem; margin-bottom:16px; letter-spacing:2px; filter: url(#space-warp-filter);">
                             【 结局 · 不朽标本 】
                         </h2>
                         <p style="color:#d4a5a9; font-size:0.96rem; line-height:1.85; margin-bottom:20px; text-align:left;">
@@ -1352,10 +1519,9 @@
                     </div>
                 `;
             } else {
-                // 结局 A：地下室囚禁
                 panel.innerHTML = `
                     <div style="text-align:center; padding:10px 0;">
-                        <h2 style="color:var(--blood-bright); font-size:1.6rem; margin-bottom:16px; letter-spacing:2px;">
+                        <h2 style="color:var(--blood-bright); font-size:1.6rem; margin-bottom:16px; letter-spacing:2px; filter: url(#space-warp-filter);">
                             【 结局 · 笼中共生 】
                         </h2>
                         <p style="color:#e1dcdb; font-size:0.96rem; line-height:1.85; margin-bottom:20px; text-align:left;">
